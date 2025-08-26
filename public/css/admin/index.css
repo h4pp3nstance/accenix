@@ -1,0 +1,52 @@
+  div .bg-warna {
+    background: -webkit-radial-gradient(closest-corner, rgba(16, 47, 70, 0) 60%, rgba(16, 47, 70, 0.26)), -webkit-linear-gradient(108deg, #26d0ce, #1a2980 90%);
+  }
+
+  .menu-item:hover {
+    color: black;
+  }
+
+  .img-center {
+    flex: none;
+    justify-content: center;
+  }
+
+  .toast-top-right {
+    top: 12px;
+    right: 12px;
+}
+  .notify {
+    padding: 15px 26px;
+    position: relative;
+    display: inline-block;
+    border-radius: 2px;
+  }
+
+
+  .notify .badgenotify {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    padding: 5px 10px;
+    border-radius: 50%;
+    background: -webkit-radial-gradient(closest-corner, rgba(16, 47, 70, 0) 60%, rgba(16, 47, 70, 0.26)), -webkit-linear-gradient(108deg, #26d0ce, #1a2980 90%);
+
+  }
+
+  .notify .badgenotify:hover {
+    color: rgb(247, 247, 247);
+  }
+
+  .loadingcustomnih {
+    animation: loadingcustomnih-animation 1s linear infinite;
+  }
+
+  @keyframes loadingcustomnih-animation {
+    0% {
+      transform: translateX(-50%);
+    }
+
+    100% {
+      transform: translateX(100%);
+    }
+  }

@@ -1,0 +1,63 @@
+.custom-bg {
+    background: linear-gradient(135deg, #5689E6, #5FA3E7, #87CEEB);
+    min-height: 100vh;
+}
+
+.btn-login {
+    background: linear-gradient(to right, #fbbf24, #f59e0b);
+    transition: transform 0.3s ease, box-shadow 0.3ds ease;
+}
+
+.btn-login:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    background: linear-gradient(to right, #f59e0b, #d97706);
+}
+
+.list-decor {
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.list-decor::before {
+    content: "✔";
+    color: #FFD700;
+    position: absolute;
+    left: 0;
+}
+
+.floating {
+    animation: float 3s ease-in-out infinite;
+}
+
+.img-container {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.img-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(59, 130, 246, 0.4), transparent, transparent);
+    border-radius: 50%;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+@media (max-width: 991.98px) {
+    .custom-bg {
+        padding: 2rem 0;
+    }
+}

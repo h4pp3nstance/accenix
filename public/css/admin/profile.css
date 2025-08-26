@@ -1,0 +1,24 @@
+.special-edit {
+    position: relative;
+  }
+  .special-edit input {
+    font-family: 'FontAwesome';
+    font-size: 1rem;
+    padding: .1rem 0 .1rem 0.5rem;
+    width: 100%;
+    border: none;
+    border-bottom: transparent 3px solid;
+    outline: 0;
+    transition: .35s ease-in;
+  }
+  .special-edit input:hover, .special-edit input:focus {
+    background-color: #f1f1f1;
+    border-bottom: #ddd 3px dotted;
+  }
+  .special-edit:after {
+    position: absolute;
+    top: 1rem;
+    left: .5rem;
+    color: gray;
+    font-size: 1.5rem;
+  }
