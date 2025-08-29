@@ -6,6 +6,10 @@ use App\Http\Controllers\Onboarding\LeadController;
 use App\Http\Controllers\Auth\NativeLoginController;
 use App\Http\Controllers\Auth\AuthController;
 
+use App\Http\Controllers\Administration\UserController;
+use App\Http\Controllers\Administration\PermissionController;
+use App\Http\Controllers\Administration\RoleController;
+
 Route::get('/', function () {
     return view('welcome');
 });
@@ -100,6 +104,72 @@ Route::middleware('wso2.role:superadmin,sales')->group(function () {
     });
 });
 
+// Admin Applications UI and API (BFF proxy)
+Route::prefix('admin')->middleware(['wso2.role:superadmin,sales'])->group(function () {
+    Route::get('/applications', [App\Http\Controllers\Admin\ApplicationsController::class, 'index'])->name('admin.applications');
+
+    // BFF API
+    Route::get('/api/applications', [App\Http\Controllers\Admin\ApplicationsController::class, 'list']);
+    Route::get('/api/applications/{id}', [App\Http\Controllers\Admin\ApplicationsController::class, 'get']);
+    Route::post('/api/applications/{id}/inbound/oidc/regenerate-secret', [App\Http\Controllers\Admin\ApplicationsController::class, 'regenerateSecret']);
+    Route::post('/api/applications/import', [App\Http\Controllers\Admin\ApplicationsController::class, 'import']);
+});
+
+Route::prefix('/administration')->name('administration.')->group(function () {
+        // USER MANAGEMENT - Superadmin only (role-based access)
+    Route::prefix('/user')->name('user.')->controller(UserController::class)->group(function () {
+        Route::middleware('wso2.role:superadmin,sales')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/ajax', 'ajax')->name('ajax');
+            Route::get('/add', 'create')->name('create');
+            Route::post('/add', 'store')->name('store');
+            Route::get('/edit/{id}', 'edit')->name('edit');
+            Route::put('/update/{id}', 'update')->name('update');
+            Route::get('/detail/{id}', 'show')->name('detail');
+            Route::delete('/delete/{id}', 'destroy')->name('destroy');
+        });
+    });
+
+    // ROLE MANAGEMENT - Superadmin only (role-based access)
+    Route::prefix('/role')->name('role.')->group(function () {
+        Route::middleware('wso2.role:superadmin,sales')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Administration\RoleController::class, 'index'])->name('index');
+            Route::get('/ajax', [\App\Http\Controllers\Administration\RoleController::class, 'ajax'])->name('ajax');
+            Route::get('/add', [\App\Http\Controllers\Administration\RoleController::class, 'create'])->name('create');
+            Route::post('/add', [\App\Http\Controllers\Administration\RoleController::class, 'store'])->name('store');
+            Route::get('/edit/{id}', [\App\Http\Controllers\Administration\RoleController::class, 'edit'])->name('edit');
+            Route::put('/update/{id}', [\App\Http\Controllers\Administration\RoleController::class, 'update'])->name('update');
+            Route::get('/detail/{id}', [\App\Http\Controllers\Administration\RoleController::class, 'show'])->name('detail');
+            Route::delete('/delete/{id}', [\App\Http\Controllers\Administration\RoleController::class, 'destroy'])->name('destroy');
+            Route::post('/refresh-permissions', [\App\Http\Controllers\Administration\RoleController::class, 'refreshPermissions'])->name('refresh');
+            
+            // Additional API endpoints for role management
+            Route::get('/api/users', [\App\Http\Controllers\Administration\RoleController::class, 'getAvailableUsers'])->name('api.users');
+            Route::get('/api/applications', [\App\Http\Controllers\Administration\RoleController::class, 'getAvailableApplications'])->name('api.applications');
+            Route::get('/api/scopes', [\App\Http\Controllers\Administration\RoleController::class, 'getApiResources'])->name('api.scopes');
+            Route::get('/api/organizations', [\App\Http\Controllers\Administration\RoleController::class, 'getAvailableOrganizations'])->name('api.organizations');
+            Route::get('/api/role-users/{id}', [\App\Http\Controllers\Administration\RoleController::class, 'getRoleUsers'])->name('api.role-users');
+        });
+    });
+
+    // PERMISSION MANAGEMENT - Superadmin only (role-based access)
+    Route::prefix('/permission')->name('permission.')->group(function () {
+        Route::middleware('wso2.role:superadmin,sales')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Administration\PermissionController::class, 'index'])->name('index');
+            Route::get('/ajax', [\App\Http\Controllers\Administration\PermissionController::class, 'ajax'])->name('ajax');
+            Route::get('/add', [\App\Http\Controllers\Administration\PermissionController::class, 'create'])->name('create');
+            Route::post('/add', [\App\Http\Controllers\Administration\PermissionController::class, 'store'])->name('store');
+            Route::get('/edit/{id}', [\App\Http\Controllers\Administration\PermissionController::class, 'edit'])->name('edit');
+            Route::put('/update/{id}', [\App\Http\Controllers\Administration\PermissionController::class, 'update'])->name('update');
+            Route::get('/detail/{id}', [\App\Http\Controllers\Administration\PermissionController::class, 'show'])->name('detail');
+            Route::delete('/delete/{id}', [\App\Http\Controllers\Administration\PermissionController::class, 'destroy'])->name('destroy');
+            
+            // API endpoint for available permissions
+            Route::get('/api/available', [\App\Http\Controllers\Administration\PermissionController::class, 'getAvailablePermissions'])->name('api.available');
+        });
+    });
+});
+
 Route::get('/validate-token', function() {
     if (!session()->has('access_token')) {
         return response()->json(['valid' => false, 'message' => 'No token found'], 401);
@@ -160,3 +230,7 @@ Route::get('/validate-token', function() {
         ], 401);
     }
 })->name('validate.token');
+
+Route::get('/debug-session', function () {
+    dd(session()->all());
+});

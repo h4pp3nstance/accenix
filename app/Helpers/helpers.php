@@ -132,6 +132,9 @@ function getUserWithToken($apiUrl)
         throw new \Exception('Access token is missing from session.');
     }
 
+    // Allow switching between /o/scim2 and /scim2 for carbon.super org users
+    $apiUrl = normalize_scim_url($apiUrl);
+
     $response = Http::withOptions(['verify' => false])
         ->withHeaders([
             'Authorization' => 'Bearer ' . $access_token,
@@ -155,14 +158,17 @@ function getUserDetailWithToken($apiUrl, $userId)
     if (!$access_token) {
         throw new \Exception('Access token is missing from session.');
     }
-    
+
+    // Allow switching between /o/scim2 and /scim2 for carbon.super org users
+    $apiUrl = normalize_scim_url($apiUrl);
+
     $response = Http::withOptions(['verify' => false])
         ->withHeaders([
             'Authorization' => 'Bearer ' . $access_token,
             'Accept' => 'application/scim+json',
             'Content-Type' => 'application/json'
         ])
-        ->get($apiUrl . '/' . $userId);
+        ->get(rtrim($apiUrl, '/') . '/' . ltrim($userId, '/'));
 
     return $response;
 }
@@ -306,8 +312,8 @@ if (!function_exists('getRolesApi')) {
      */
     function getRolesApi()
     {
-        $access_token = \App\Helpers\Session::get('access_token');
-        $rolesUrl = env('ROLES_URL');
+        $access_token = session('access_token');
+        $rolesUrl = normalize_scim_url(env('ROLES_URL'));
         $response = Http::withOptions(['verify' => false])
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $access_token,
@@ -315,6 +321,39 @@ if (!function_exists('getRolesApi')) {
             ])
             ->get($rolesUrl);
         return $response;
+    }
+}
+
+if (!function_exists('normalize_scim_url')) {
+    /**
+     * Normalize a SCIM endpoint URL according to the logged-in user's org.
+     * If the user belongs to the 'Super' org (carbon.super), WSO2 expects
+     * the tenant-less path (/scim2). For other orgs we keep /o/scim2.
+     * @param string $url
+     * @return string
+     */
+    function normalize_scim_url($url)
+    {
+        if (empty($url) || !is_string($url)) return $url;
+
+        try {
+            $org = session('user_info.org_name');
+        } catch (\Exception $e) {
+            $org = null;
+        }
+
+        // If user is in carbon.super / Super org, prefer /scim2 (no /o prefix)
+        if ($org && strcasecmp($org, 'Super') === 0) {
+            // Replace '/o/scim2' with '/scim2' if present
+            if (strpos($url, '/o/scim2') !== false) {
+                return str_replace('/o/scim2', '/scim2', $url);
+            }
+            // Also handle variants with trailing segments
+            return $url;
+        }
+
+        // Non-super org: leave URL as-is (assume env uses /o/scim2)
+        return $url;
     }
 }
 

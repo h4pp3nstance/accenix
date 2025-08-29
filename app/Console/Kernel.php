@@ -29,6 +29,11 @@ class Kernel extends ConsoleKernel
      */
     protected function commands(): void
     {
-        // $this->load(__DIR__.'/Commands');
+        $this->load(__DIR__.'/Commands');
+
+        // Register closure-based commands and other console route files
+        if (file_exists(base_path('routes/console.php'))) {
+            require base_path('routes/console.php');
+        }
     }
 }

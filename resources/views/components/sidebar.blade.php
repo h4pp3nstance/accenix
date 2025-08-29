@@ -88,7 +88,7 @@
                     });
                 @endphp
                 @if ($roleNames->contains('superadmin') || $roleNames->contains('sales'))
-                <li class="sidebar-item has-sub {{ Request::is('administration/user*') || Request::is('administration/role*') || Request::is('administration/permission*') ? 'active' : '' }}">
+                <li class="sidebar-item has-sub {{ Request::is('administration/user*') || Request::is('administration/role*') || Request::is('administration/permission*') || Request::is('admin/applications*') ? 'active' : '' }}">
                     <a href="#" class="sidebar-link">
                         <i class="bi bi-gear-fill"></i>
                         <span>Administration</span>
@@ -103,6 +103,9 @@
                         <li class="submenu-item {{ Request::is('administration/permission*') ? 'active' : '' }}">
                             <a href="/administration/permission" class="submenu-link">Permission</a>
                         </li>
+                        <li class="submenu-item {{ Request::is('admin/applications*') ? 'active' : '' }}">
+                            <a href="{{ route('admin.applications') }}" class="submenu-link">Applications</a>
+                        </li>
                     </ul>
                 </li>
                 @endif
@@ -114,7 +117,7 @@
                 <li class="sidebar-item has-sub {{ Request::is('admin/crm*') ? 'active' : '' }}">
                     <a href="#" class="sidebar-link">
                         <i class="bi bi-people-fill"></i>
-                        <span>CRM</span>
+                        <span>Tenant</span>
                     </a>
                     <ul class="submenu active">
                         <li class="submenu-item {{ Request::is('admin/crm/dashboard*') ? 'active' : '' }}">
