@@ -116,7 +116,7 @@ Route::prefix('admin')->middleware(['wso2.role:superadmin,sales'])->group(functi
 });
 
 Route::prefix('/administration')->name('administration.')->group(function () {
-        // USER MANAGEMENT - Superadmin only (role-based access)
+    // USER MANAGEMENT - Superadmin only (role-based access)
     Route::prefix('/user')->name('user.')->controller(UserController::class)->group(function () {
         Route::middleware('wso2.role:superadmin,sales')->group(function () {
             Route::get('/', 'index')->name('index');
@@ -127,6 +127,8 @@ Route::prefix('/administration')->name('administration.')->group(function () {
             Route::put('/update/{id}', 'update')->name('update');
             Route::get('/detail/{id}', 'show')->name('detail');
             Route::delete('/delete/{id}', 'destroy')->name('destroy');
+            // Bulk delete users - accepts an array of ids (ids[])
+            Route::post('/bulk-delete', 'bulkDestroy')->name('bulk');
         });
     });
 
@@ -170,6 +172,7 @@ Route::prefix('/administration')->name('administration.')->group(function () {
     });
 });
 
+// just for debug
 Route::get('/validate-token', function() {
     if (!session()->has('access_token')) {
         return response()->json(['valid' => false, 'message' => 'No token found'], 401);

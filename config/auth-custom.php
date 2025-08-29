@@ -31,8 +31,8 @@ return [
     'scim' => [
         'user_url' => env('USER_URL'),
         'token_url' => env('SCIM_TOKEN_URL'),
-        'client_id' => env('SCIM_CLIENT_ID'),
-        'client_secret' => env('SCIM_CLIENT_SECRET'),
+        'client_id' => env('IS_CLIENT_ID'),
+        'client_secret' => env('IS_CLIENT_SECRET'),
         'verify_ssl' => env('SCIM_VERIFY_SSL', true),
         'timeout' => env('SCIM_TIMEOUT', 30),
     ],

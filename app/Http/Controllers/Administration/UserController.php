@@ -201,6 +201,7 @@ class UserController extends Controller
     public function show(string $id)
     {
         try {
+            \Log::info('UserController: view user', ['id' => $id, 'actor' => session('user_info.username')]);
             // Using token-based authentication
             $apiResponse = ScimHelper::getUserDetailWithToken(env('USER_URL'), $id);
             $data = json_decode($apiResponse->body());
@@ -380,8 +381,114 @@ class UserController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
-        //
+        $access_token = Session::get('access_token');
+        if (!$access_token) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Failed to obtain SCIM2 access token'], 401);
+            }
+            return back()->withErrors('Failed to obtain SCIM2 access token');
+        }
+
+        try {
+            \Log::info('UserController: delete attempt', ['id' => $id, 'actor' => session('user_info.username')]);
+            $resp = Http::withOptions(['verify' => false])
+                ->withHeaders([
+                    'accept' => 'application/scim+json',
+                    'Authorization' => 'Bearer ' . $access_token,
+                ])
+                ->delete(env('USER_URL') . '/' . rawurlencode($id));
+
+            if ($resp->status() === 403) {
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => 'Operation is not permitted. You do not have permissions to make this request.'], 403);
+                }
+                return back()->withErrors('Operation is not permitted. You do not have permissions to make this request.');
+            }
+
+            if ($resp->status() === 204 || $resp->successful()) {
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json(['success' => true, 'message' => 'User deleted successfully!']);
+                }
+                return redirect()->route('administration.user.index')->with('success', 'User deleted successfully!');
+            }
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Failed to delete user: ' . $resp->body()], $resp->status() ?: 400);
+            }
+
+            return back()->withErrors('Failed to delete user: ' . $resp->body());
+        } catch (\Exception $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            }
+            return back()->withErrors($e->getMessage());
+        }
+    }
+
+    /**
+     * Bulk delete users. Accepts POST with 'ids' => array of user IDs.
+     */
+    public function bulkDestroy(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        if (!is_array($ids)) {
+            $ids = array_filter(array_map('trim', explode(',', (string) $ids)));
+        }
+
+        if (empty($ids)) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'No user ids provided'], 400);
+            }
+            return back()->withErrors('No user ids provided');
+        }
+
+        $access_token = Session::get('access_token');
+        if (!$access_token) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Failed to obtain SCIM2 access token'], 401);
+            }
+            return back()->withErrors('Failed to obtain SCIM2 access token');
+        }
+
+        $results = [];
+        foreach ($ids as $id) {
+            try {
+                $resp = Http::withOptions(['verify' => false])
+                    ->withHeaders([
+                        'accept' => 'application/scim+json',
+                        'Authorization' => 'Bearer ' . $access_token,
+                    ])
+                    ->delete(env('USER_URL') . '/' . rawurlencode($id));
+
+                if ($resp->status() === 403) {
+                    $results[$id] = ['success' => false, 'status' => 403, 'message' => 'Forbidden'];
+                    continue;
+                }
+
+                if ($resp->status() === 204 || $resp->successful()) {
+                    $results[$id] = ['success' => true, 'status' => $resp->status(), 'message' => 'Deleted'];
+                } else {
+                    $results[$id] = ['success' => false, 'status' => $resp->status(), 'message' => $resp->body()];
+                }
+            } catch (\Exception $e) {
+                $results[$id] = ['success' => false, 'status' => 500, 'message' => $e->getMessage()];
+            }
+        }
+
+        \Log::info('UserController: bulk delete attempt', ['ids' => $ids, 'results' => $results, 'actor' => session('user_info.username')]);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true, 'results' => $results]);
+        }
+
+        // For non-AJAX requests, summarize results in flash message
+        $failed = array_filter($results, function ($r) { return !$r['success']; });
+        if (empty($failed)) {
+            return redirect()->route('administration.user.index')->with('success', 'Selected users deleted successfully');
+        }
+
+        return redirect()->route('administration.user.index')->with('error', 'Some users failed to delete. Check logs for details.');
     }
 }
